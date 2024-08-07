@@ -35,9 +35,8 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
         return _lowLevel[uri].apply!!;
     }
 
-    String[] nodes = uri.split("/"); // Leaked Allocation ?
+    String[] nodes = uri.tsplit("/");
 
-    io::printn(nodes[0]);
     RouteNode*! temp = _lowLevel[nodes[0]];
     if (catch err = temp) {
         io::printfn("Catch err: %s", err);

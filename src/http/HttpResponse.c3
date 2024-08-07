@@ -13,43 +13,43 @@ struct HttpResponse {
 }
 
 fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
-    DString buffer;
-    buffer.new_init(64);
+    @pool() {
+        DString buffer;
+        buffer.temp_init(64);
 
-    buffer.appendf("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message);
+        buffer.appendf("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message);
 
-    Formatter formatter;
+        Formatter formatter;
 
-    if (self.body.len > 0) {
-        if (!self.headers.is_initialized()) {
-            self.headers.new_init();
+        if (self.body.len > 0) {
+            if (!self.headers.is_initialized()) {
+                self.headers.new_init();
+            }
+
+            StringList content_length;
+            content_length.temp_init(1);
+            content_length.push(string::new_format("%d", self.body.len)); // Leaked Allocation
+
+            self.headers.set("Content-Length", content_length);
         }
 
-        List(<String>) content_length;
-        content_length.new_init(1);
-        content_length.push(string::new_format("%d", self.body.len)); // Leaked Allocation
+        self.headers.@each(; String key, List(<String>) values)
+        {
+            foreach (value: values) {
+                buffer.appendf("%s: %s\r\n", key, value);
+            }
+        };
 
-        self.headers.set("Content-Length", content_length);
-        content_length.free();
-    }
+        if (self.headers.len() > 0) {
+            buffer.append_chars("\r\n");
+        }
 
-    self.headers.@each(; String key, List(<String>) values)
-    {
-        foreach (value: values) {
-            buffer.appendf("%s: %s\r\n", key, value);
+        socket.write(buffer.str_view())!;
+
+        if (self.body.len > 0) {
+            socket.write(self.body)!;
         }
     };
-
-    if (self.headers.len() > 0) {
-        buffer.append_chars("\r\n");
-    }
-
-    socket.write(buffer.str_view())!;
-    buffer.free();
-
-    if (self.body.len > 0) {
-        socket.write(self.body)!;
-    }
 }
 
 fn void HttpResponse.free(HttpResponse* self) {
