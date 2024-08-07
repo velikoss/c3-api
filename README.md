@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `c3-api` project is designed to handle HTTP requests and responses with a structured approach using custom classes for different HTTP components such as verbs, headers, statuses, and routes. This project aims to provide a comprehensive and modular way to manage and manipulate HTTP communications.
+The `c3-api` project is a simple C3 HTTP Server with routing. This project aims to provide a comprehensive and modular way to manage and manipulate HTTP communications.
 
 Inspired from [ArjixWasTaken/c3-simple-http](https://github.com/ArjixWasTaken/c3-simple-http)
 
