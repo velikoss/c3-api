@@ -13,10 +13,9 @@ To install and set up the `c3-api` project, follow these steps:
 1. Clone the repository:
    ```bash
    git clone https://github.com/velikoss/c3-api.git
-   cd c3-api
    ```
 
-2. Ensure you have the C3 compiler installed. You can find the installation instructions [here](https://c3lang.org/).
+2. Ensure you have the C3 compiler installed. You can find the installation instructions [here](https://c3-lang.org/).
 
 ## Usage
 
@@ -24,7 +23,7 @@ To compile and run the project, use the following commands:
 
 1. Compile the project:
    ```bash
-   c3c compile
+   c3c compile -O3 c3-api
    ```
 
 2. Run the executable:
