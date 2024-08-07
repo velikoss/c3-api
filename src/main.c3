@@ -36,7 +36,7 @@ fn HttpResponse pong1(HttpRequest req, HashMap(<String,String>) args) {
 import std::collections::map;
 
 fn int process(void* arg) {
-mem::@report_heap_allocs_in_scope() {
+//mem::@report_heap_allocs_in_scope() {
     TcpSocket* socket = arg;
     defer socket.close()!!;
 
@@ -60,7 +60,7 @@ mem::@report_heap_allocs_in_scope() {
     res.free();
 
     return 0;
-};
+//};
 }
 
 fn void! startServer(String host, uint port) {
@@ -106,9 +106,11 @@ $endif
             continue;
         }
 
+        //mem::@report_heap_allocs_in_scope() {
         thread::Thread thread;
         thread.create(&process, @tclone(socket))!!;
         thread.detach()!!;
+        //};
     }
 
     io::printn("Closing server...");

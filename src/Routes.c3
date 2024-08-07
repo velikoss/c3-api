@@ -26,7 +26,11 @@ fn RouteNode*! get_next_node(RouteNode* from, String to) {
 import std::io;
 
 fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
-    if (uri[0] == '/') uri = uri[1..];
+    if (uri == "" || uri == "/") {
+        return _lowLevel[uri].apply ?? &e404;
+    }
+
+    if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
 
     if (
         !(@ok(uri.index_of_char('{')) && @ok(uri.index_of_char('}'))) // Dynamic URI check
@@ -57,7 +61,7 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
 }
 
 macro RouteNode* new_route(String name, HashMap(<String, RouteNode*>) subnodes = {}, RouteFunction apply = null) {
-    return @tclone(RouteNode {.name = name, .subnodes = subnodes, .apply = apply});
+    return @clone(RouteNode {.name = name, .subnodes = subnodes, .apply = apply});
 }
 
 fn bool String.is_braced(self) {
@@ -65,7 +69,7 @@ fn bool String.is_braced(self) {
 }
 
 fn void add_route(String route, RouteFunction apply) {
-    if (route[0] == '/') route = route[1:route.len-1];
+    if (route[0] == '/' && route.len > 1) route = route[1:route.len-1];
 
     if (
             !(@ok(route.index_of_char('{')) && @ok(route.index_of_char('}'))) // Dynamic URI check
