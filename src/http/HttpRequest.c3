@@ -92,7 +92,6 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
 
         self.headers.new_init();
         self.headers.from_lines(header_lines)!;
-
         self.body = body;
 
         header.free();

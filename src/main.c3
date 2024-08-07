@@ -48,13 +48,17 @@ mem::@report_heap_allocs_in_scope() {
     String uri = req.uri[1:req.uri.len-1];
 
     HashMap(<String,String>) args;
+    args.new_init();
 
     RouteFunction route = get_route(uri, &args);
     HttpResponse res = route(req, args);
 
     res.write(socket)!!;
+
+    args.free();
     req.free();
     res.free();
+
     return 0;
 };
 }
@@ -109,10 +113,17 @@ $endif
 
     io::printn("Closing server...");
     server.close()!!;
+
+
 }
+
+fn void init_route_map() => _lowLevel.new_init();
+fn void destroy_route_map() => _lowLevel.free();
 
 fn int main(String[] args) {
     // TODO CONFIG
+    init_route_map();
+    defer destroy_route_map();
 	String host = "127.0.0.1";
     uint port = 8080;
 
