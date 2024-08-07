@@ -2,32 +2,31 @@ module c3api;
 import std::collections::map;
 
 def RouteFunction = fn HttpResponse(HttpRequest, HashMap(<String,String>));
+def RouteMap = HashMap(<String, RouteNode*>);
 
 struct RouteNode {
     String name;
-    HashMap(<String, RouteNode*>) subnodes;
+    RouteMap subnodes;
     RouteFunction apply;
 }
 
-HashMap(<String, RouteNode*>) _lowLevel;
+RouteMap _lowLevel;
 
 fn HttpResponse e404(HttpRequest req, HashMap(<String,String>) args) {
     HttpResponse res;
     res.status = HttpStatus.NOT_FOUND;
-    res.body = string::new_format("{\"type\":\"error\",\"status\":404}\n", req.method, req.uri);
+    res.body = string::new_format(`{"type":"error","status":404}` "\n", req.method, req.uri);
     return res;
 }
 
-fn RouteNode* get_next_node(RouteNode* from, String to) {
-    if (from.subnodes.has_key(to)) return from.subnodes[to]!!;
-    RouteNode*! ret = from.subnodes["{}"];
-    return @ok(ret) ? ret!! : null;
+fn RouteNode*! get_next_node(RouteNode* from, String to) {
+    return from.subnodes[to] ?? from.subnodes["{}"];
 }
 
 import std::io;
 
 fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
-    if (uri[0] == '/') uri = uri[1:uri.len-1];
+    if (uri[0] == '/') uri = uri[1..];
 
     if (
         !(@ok(uri.index_of_char('{')) && @ok(uri.index_of_char('}'))) // Dynamic URI check
@@ -36,16 +35,16 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
         return _lowLevel[uri].apply!!;
     }
 
-    String[] nodes = uri.split("/");
-    if (!_lowLevel.has_key(nodes[0])) return &e404;
+    String[] nodes = uri.split("/"); // Leaked Allocation ?
 
-    RouteNode* temp = _lowLevel[nodes[0]]!!;
+    RouteNode*! temp = _lowLevel[nodes[0]];
+    if (catch temp) return &e404;
 
     int i = 0;
     while (temp != null && i < nodes.len - 1) {
-        temp = get_next_node(temp, nodes[i++]);
+        temp = get_next_node(temp, nodes[i++])!!;
         if (temp.name[0] == '{' && temp.name[temp.name.len-1] == '}'
-        ) (*args)[temp.name[1:temp.name.len-2]] = nodes[i];
+        ) (*args)[temp.name[1:temp.name.len-2]] = nodes[i]; // Leaked Allocation
     }
 
     if (temp == null) {
@@ -81,15 +80,15 @@ fn void add_route(String route, RouteFunction apply) {
 
     int i = 0;
     while (i < nodes.len - 1) {
-        RouteNode* _temp = get_next_node(temp, nodes[i++]);
-        if (_temp == null) {
+        RouteNode*! _temp = get_next_node(temp, nodes[i++]);
+        if (catch _temp) {
             _temp = new_route(nodes[i]);
             temp.subnodes[
                 (nodes[i][0]=='{' && nodes[i][nodes[i].len-1]=='}') ?
                 "{}" : nodes[i]
-            ] = _temp;
+            ] = _temp!!;
         }
-        temp = _temp;
+        temp = _temp!!;
     }
 
     temp.apply = apply;

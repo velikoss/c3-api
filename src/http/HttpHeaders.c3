@@ -21,6 +21,7 @@ fn void! HttpHeaders.from_lines(HttpHeaders* self, List(<String>) lines) {
           values.new_init(2);
           values.push(headerValue);
           self.set(headerName, values);
+          values.free();
         }
     }
     lines.free();

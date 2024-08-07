@@ -76,9 +76,9 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
     char[] body = bytes.entries[i..bytes.size];
 
     List(<String>) header_lines;
-    header_lines.new_init_with_array(((ZString)header.entries).str_view().split("\r\n"));
+    header_lines.new_init_with_array(((ZString)header.entries).str_view().split("\r\n")); // Leaked Allocation
 
-    String[] status_line = header_lines.pop_first()!.split(" ");
+    String[] status_line = header_lines.pop_first()!.split(" "); // Leaked Allocation
     if (status_line.len != 3) return HttpRequestError.MALFORMED_REQUEST?;
 
     String version = status_line[2];
@@ -92,7 +92,15 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
 
     self.body = body;
 
+    //header_lines.free();
     bytes.free();
     header.free();
-    header_lines.free();
 }
+
+fn void HttpRequest.free(HttpRequest* self) {
+    //self.uri.free();
+    self.headers.free();
+    //free(self.body);
+    //free(self);
+}
+

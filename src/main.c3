@@ -36,11 +36,12 @@ fn HttpResponse pong1(HttpRequest req, HashMap(<String,String>) args) {
 import std::collections::map;
 
 fn int process(void* arg) {
+//mem::@report_heap_allocs_in_scope() {
     TcpSocket* socket = arg;
     defer socket.close()!!;
 
     HttpRequest req;
-    if (catch anyfault err =req.read(socket)) {
+    if (catch anyfault err = req.read(socket)) {
         return 1;
     }
 
@@ -52,7 +53,10 @@ fn int process(void* arg) {
     HttpResponse res = route(req, args);
 
     res.write(socket)!!;
+    req.free();
+    res.free();
     return 0;
+//};
 }
 
 fn void! startServer(String host, uint port) {
@@ -97,8 +101,8 @@ $if env::WIN32:
 $endif
             continue;
         }
-        thread::Thread thread;
 
+        thread::Thread thread;
         thread.create(&process, @tclone(socket))!!;
         thread.detach()!!;
     }

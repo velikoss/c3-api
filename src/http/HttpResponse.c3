@@ -27,9 +27,10 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
 
         List(<String>) content_length;
         content_length.new_init(1);
-        content_length.push(string::new_format("%d", self.body.len));
+        content_length.push(string::new_format("%d", self.body.len)); // Leaked Allocation
 
         self.headers.set("Content-Length", content_length);
+        content_length.free();
     }
 
     self.headers.@each(; String key, List(<String>) values)
@@ -49,4 +50,10 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
     if (self.body.len > 0) {
         socket.write(self.body)!;
     }
+}
+
+fn void HttpResponse.free(HttpResponse* self) {
+    self.headers.free();
+    free(self.body);
+    //free(self);
 }
