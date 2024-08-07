@@ -46,14 +46,12 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
     int i = 0;
     while (temp != null && i < nodes.len - 1) {
         temp = get_next_node(temp, nodes[i++])!!;
-        if (temp.name[0] == '{' && temp.name[temp.name.len-1] == '}'
-        ) (*args)[temp.name[1:temp.name.len-2]] = nodes[i]; // Leaked Allocation
+        if (temp.name[0] == '{' && temp.name[^1] == '}'
+        ) (*args)[temp.name[1:^2]] = nodes[i]; // Leaked Allocation
     }
 
-    if (temp == null) {
-        io::printn("Null temp");
-        return &e404;
-    }
+    if (temp == null) return &e404;
+
     RouteFunction res = temp.apply;
     return res;
 }

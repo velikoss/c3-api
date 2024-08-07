@@ -88,12 +88,12 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
         if (version != "HTTP/1.1") return HttpRequestError.UNSUPPORTED_VERSION?;
 
         self.set_method(status_line[0])!;
-        self.uri = status_line[1].copy();
+        self.uri = status_line[1];
 
         self.headers.new_init();
         self.headers.from_lines(header_lines)!;
 
-        self.body = ((String)body).copy();
+        self.body = body;
 
         header.free();
     };

@@ -28,7 +28,7 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
 
             StringList content_length;
             content_length.temp_init(1);
-            content_length.push(string::new_format("%d", self.body.len)); // Leaked Allocation
+            content_length.push(string::tformat("%d", self.body.len)); // Leaked Allocation
 
             self.headers.set("Content-Length", content_length);
         }
