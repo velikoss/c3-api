@@ -37,8 +37,12 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
 
     String[] nodes = uri.split("/"); // Leaked Allocation ?
 
+    io::printn(nodes[0]);
     RouteNode*! temp = _lowLevel[nodes[0]];
-    if (catch temp) return &e404;
+    if (catch err = temp) {
+        io::printfn("Catch err: %s", err);
+        return &e404;
+    }
 
     int i = 0;
     while (temp != null && i < nodes.len - 1) {
@@ -48,6 +52,7 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
     }
 
     if (temp == null) {
+        io::printn("Null temp");
         return &e404;
     }
     RouteFunction res = temp.apply;
@@ -56,6 +61,10 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
 
 macro RouteNode* new_route(String name, HashMap(<String, RouteNode*>) subnodes = {}, RouteFunction apply = null) {
     return @tclone(RouteNode {.name = name, .subnodes = subnodes, .apply = apply});
+}
+
+fn bool String.is_braced(self) {
+    return self[0] == '{' && self[^1] == '}';
 }
 
 fn void add_route(String route, RouteFunction apply) {
@@ -78,17 +87,13 @@ fn void add_route(String route, RouteFunction apply) {
         temp = _lowLevel[nodes[0]]!!;
     }
 
-    int i = 0;
-    while (i < nodes.len - 1) {
-        RouteNode*! _temp = get_next_node(temp, nodes[i++]);
-        if (catch _temp) {
-            _temp = new_route(nodes[i]);
-            temp.subnodes[
-                (nodes[i][0]=='{' && nodes[i][nodes[i].len-1]=='}') ?
-                "{}" : nodes[i]
-            ] = _temp!!;
+    foreach (i, node : nodes[..^2]) {
+        if (try _temp = get_next_node(temp, node)) {
+            temp = _temp;
+            continue;
         }
-        temp = _temp!!;
+        String key = nodes[i + 1].is_braced() ? "{}" : nodes[i + 1];
+        temp.subnodes[key] = temp = new_route(nodes[i + 1]);
     }
 
     temp.apply = apply;

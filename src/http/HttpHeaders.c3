@@ -2,7 +2,8 @@ module c3api;
 
 import std::collections;
 
-def HttpHeaders = HashMap(<String, List(<String>)>);
+def StringList = List(<String>);
+def HttpHeaders = HashMap(<String, StringList>);
 
 fn void! HttpHeaders.from_lines(HttpHeaders* self, List(<String>) lines) {
     foreach (line: lines) {

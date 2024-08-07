@@ -27,80 +27,79 @@ fault HttpVerbError {
 }
 
 fn void! HttpRequest.set_method(HttpRequest* self, String verb) {
-    switch (verb) {
-        case "HEAD": self.method=HttpVerb.HEAD;
-        case "GET": self.method=HttpVerb.GET;
-        case "PATCH": self.method=HttpVerb.PATCH;
-        case "POST": self.method=HttpVerb.POST;
-        case "PUT": self.method=HttpVerb.PUT;
-        case "DELETE": self.method=HttpVerb.DELETE;
-        case "OPTIONS": self.method=HttpVerb.OPTIONS;
-        case "TRACE": self.method=HttpVerb.TRACE;
-        case "CONNECT": self.method=HttpVerb.CONNECT;
-        default: return HttpVerbError.INVALID_VERB?;
-    }
+    self.method = {|
+        switch (verb) {
+            case "HEAD": return HttpVerb.HEAD;
+            case "GET": return HttpVerb.GET;
+            case "PATCH": return HttpVerb.PATCH;
+            case "POST": return HttpVerb.POST;
+            case "PUT": return HttpVerb.PUT;
+            case "DELETE": return HttpVerb.DELETE;
+            case "OPTIONS": return HttpVerb.OPTIONS;
+            case "TRACE": return HttpVerb.TRACE;
+            case "CONNECT": return HttpVerb.CONNECT;
+            default: return HttpVerbError.INVALID_VERB?;
+        }
+    |}!;
 }
 
 
 fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
-    List(<char>) bytes;
-    bytes.new_init(256);
+    @pool() {
+        List(<char>) bytes;
+        bytes.temp_init(256);
 
-    char[256] buffer;
-    while (try usz bytes_read = socket.read(&buffer)) {
-        bytes.add_array(buffer[:bytes_read]);
+        char[256] buffer;
+        while (try usz bytes_read = socket.read(&buffer)) {
+            bytes.add_array(buffer[:bytes_read]);
 
-        if (bytes.size >= MAX_READ_SIZE) return HttpRequestError.REQUEST_TOO_LARGE?;
-        if (bytes_read < 256) break;
-    }
-
-    if (bytes.size == 0) return HttpRequestError.NO_DATA?;
-
-    List(<char>) header;
-    header.new_init(256);
-
-    usz i = 0;
-    for (; i < bytes.size; i++) {
-        if (
-            bytes[i] == '\r' && bytes[i + 1] == '\n' &&
-            bytes[i + 2] == '\r' && bytes[i + 3] == '\n'
-        ) {
-            i += 4;
-            break;
+            if (bytes.size >= MAX_READ_SIZE) return HttpRequestError.REQUEST_TOO_LARGE?;
+            if (bytes_read < 256) break;
         }
 
-        header.push(bytes[i]);
-    }
-    header.push('\0');
+        if (bytes.size == 0) return HttpRequestError.NO_DATA?;
 
-    char[] body = bytes.entries[i..bytes.size];
+        List(<char>) header;
+        header.temp_init(256);
 
-    List(<String>) header_lines;
-    header_lines.new_init_with_array(((ZString)header.entries).str_view().split("\r\n")); // Leaked Allocation
+        usz i = 0;
+        for (; i < bytes.size; i++) {
+            if (
+                bytes[i] == '\r' && bytes[i + 1] == '\n' &&
+                bytes[i + 2] == '\r' && bytes[i + 3] == '\n'
+            ) {
+                i += 4;
+                break;
+            }
 
-    String[] status_line = header_lines.pop_first()!.split(" "); // Leaked Allocation
-    if (status_line.len != 3) return HttpRequestError.MALFORMED_REQUEST?;
+            header.push(bytes[i]);
+        }
+        header.push('\0');
 
-    String version = status_line[2];
-    if (version != "HTTP/1.1") return HttpRequestError.UNSUPPORTED_VERSION?;
+        char[] body = bytes.entries[i..bytes.size];
 
-    self.set_method(status_line[0])!;
-    self.uri = status_line[1];
+        StringList header_lines;
+        header_lines.temp_init_with_array(((ZString)header.entries).str_view().tsplit("\r\n"));
 
-    self.headers.new_init();
-    self.headers.from_lines(header_lines)!;
+        String[] status_line = header_lines.pop_first()!.tsplit(" ");
+        if (status_line.len != 3) return HttpRequestError.MALFORMED_REQUEST?;
 
-    self.body = body;
+        String version = status_line[2];
+        if (version != "HTTP/1.1") return HttpRequestError.UNSUPPORTED_VERSION?;
 
-    //header_lines.free();
-    bytes.free();
-    header.free();
+        self.set_method(status_line[0])!;
+        self.uri = status_line[1].copy();
+
+        self.headers.new_init();
+        self.headers.from_lines(header_lines)!;
+
+        self.body = ((String)body).copy();
+
+        header.free();
+    };
 }
 
 fn void HttpRequest.free(HttpRequest* self) {
-    //self.uri.free();
     self.headers.free();
-    //free(self.body);
-    //free(self);
 }
 
