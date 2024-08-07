@@ -78,13 +78,14 @@ To start the server, ensure your main function is set up correctly in `main.c3`:
 
 Here are some planned features and improvements for the `c3-api` project:
 
-0. **FIX MEMORY LEAKS**: 3k requests spikes up RAM usage from 6Kb to 1.6Gb without any freeing. Any contributions and suggestions are welcomed.
-1. **Enhanced Routing**: Implement advanced routing capabilities, including support for query parameters and wildcard routes.
-2. **Middleware Support**: Add support for middleware to handle tasks such as authentication, logging, and request validation.
-3. **HTTPS Support**: Enable HTTPS support for secure communications.
-4. **Configuration Management**: Develop a configuration management system to easily manage server settings and environment variables.
-5. **Testing Framework**: Create a robust testing framework to ensure the reliability and stability of the API.
-6. **Documentation**: Improve documentation with detailed examples and usage guides.
+- [x] 0. **FIX MEMORY LEAKS**: 3k requests spikes up RAM usage from 6Kb to 1.6Gb without any freeing. Any contributions and suggestions are welcomed.
+   - Fixed. 3k request now spikes up RAM usage to ~50MB
+- [ ] 1. **Enhanced Routing**: Implement advanced routing capabilities, including support for query parameters and wildcard routes.
+- [ ] 2. **Middleware Support**: Add support for middleware to handle tasks such as authentication, logging, and request validation.
+- [ ] 3. **HTTPS Support**: Enable HTTPS support for secure communications.
+- [ ] 4. **Configuration Management**: Develop a configuration management system to easily manage server settings and environment variables.
+- [ ] 5. **Testing Framework**: Create a robust testing framework to ensure the reliability and stability of the API.
+- [ ] 6. **Documentation**: Improve documentation with detailed examples and usage guides.
 
 ## Contributing
 
