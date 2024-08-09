@@ -1,19 +1,67 @@
 # c3-api
 
-# New Readme
-
-## Introducing Controllers!
-TODO README
-
--- --
-
-# Old Readme for [This version and lower](https://github.com/velikoss/c3-api/tree/f7021bc6f2ff54d9c42952dee65c852cecd2ddf4)
-
 ## Overview
 
 The `c3-api` project is a simple C3 HTTP Server with routing. This project aims to provide a comprehensive and modular way to manage and manipulate HTTP communications.
 
+The project is tested and confirmed to be working in Windows, Linux and Mac equally
+
 Inspired from [ArjixWasTaken/c3-simple-http](https://github.com/ArjixWasTaken/c3-simple-http)
+
+## 09.08.2024 Introducing Controllers!
+### Now you can write function without even touching `main.c3`.
+
+<b>Every Route function should start with: </b><br/>
+```
+fn HttpResponse c3api::ControllerParadise.foo(c3api::Cref self = null, HttpRequest req, HashMap(<String,String>) args) @Controller("/baz") {}
+```
+Here .foo is the unique name of the route method, and "/baz" is the path to the route itself <br/>
+req is the HttpRequest and args is the Map of dynamic arguments (see example [here](https://github.com/velikoss/c3-api/blob/main/src/examples/dynamic_route.c3)) <br/>
+And yes, `c3api::ControllerParadise.yourRouteName` and `c3api::Cref self = null` as first argument is necessary for routing system to work. 
+
+For more info you can look into [examples](https://github.com/velikoss/c3-api/tree/main/src/examples).
+
+### [Ping example](https://github.com/velikoss/c3-api/blob/main/src/examples/ping.c3)
+
+```c
+module c3test;
+import c3api;
+import std::collections::map;
+
+fn HttpResponse c3api::ControllerParadise.ping(c3api::Cref self = null, HttpRequest req, HashMap(<String,String>) args) @Controller("/ping") {
+    HttpResponse res;
+    res.status = HttpStatus.OK;
+    res.body = string::new_format("Pong!\n", req.method, req.uri);
+    return res;
+}
+```
+
+### [Dynamic Argument example](https://github.com/velikoss/c3-api/blob/main/src/examples/dynamic_route.c3)
+
+```c
+module c3test;
+import c3api;
+import std::collections::map;
+
+fn HttpResponse c3api::ControllerParadise.greetings(c3api::Cref self = null, HttpRequest req, HashMap(<String,String>) args) @Controller("/hi/{username}") {
+    @pool() { // Using pool because of dstring::temp_new();
+        HttpResponse res;
+        res.status = HttpStatus.OK;
+        DString greetings = dstring::temp_new();
+        greetings.appendf("Hi, %s!\n", args["username"]!!);
+        res.body = string::new_format(greetings.tcopy_str(), req.method, req.uri);
+        return res;
+    };
+}
+```
+
+## Plans
+
+- [ ] CORS Module
+- [ ] Custom modules support
+- [ ] Config File
+- [ ] Logging system
+- [ ] Embedding **c3-api** into other modules
 
 ## Installation
 
@@ -39,6 +87,40 @@ To compile and run the project, use the following commands:
    ```bash
    ./c3api
    ```
+
+## Specs
+
+```C
+enum HttpVerb {
+    HEAD,
+    GET,
+    PATCH,
+    POST,
+    PUT,
+    DELETE,
+    OPTIONS,
+    TRACE,
+    CONNECT
+}
+
+struct HttpRequest {
+    HttpVerb method;
+    String uri;
+    HttpHeaders headers;
+    char[] body;
+}
+
+struct HttpResponse {
+    HttpStatus status;
+    HttpHeaders headers;
+    char[] body;
+}
+```
+
+
+-- --
+
+# Old Readme for [This version and lower](https://github.com/velikoss/c3-api/tree/f7021bc6f2ff54d9c42952dee65c852cecd2ddf4)
 
 ## Adding Routes
 
