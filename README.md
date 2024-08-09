@@ -80,6 +80,8 @@ Here are some planned features and improvements for the `c3-api` project:
 
 - [x] 0. **FIX MEMORY LEAKS**: 3k requests spikes up RAM usage from 6Kb to 1.6Gb without any freeing. Any contributions and suggestions are welcomed.
    - Fixed. 3k request now spikes up RAM usage to ~50MB
+   - Fixed again as of [#726567a](https://github.com/velikoss/c3-api/commit/726567adebdcf89005da53933d04d1cb54f4ae05). Now 230k GET requests spikes up memory usage at around ~1.1Mb with it going down to 0.6Mb after benchmarking (Thanks [@lerno](https://github.com/lerno) for help!)
+   - [ ] TODO Benchmark info
 - [x] 1. **Enhanced Routing**: Implement advanced routing capabilities, including support for query parameters and wildcard routes.
    - [ ] method(string, fn) instead of add_route(string, fn)
 - [ ] 2. **Middleware Support**: Add support for middleware to handle tasks such as authentication, logging, and request validation.
