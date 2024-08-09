@@ -14,7 +14,9 @@ struct WsaData @if(env::WIN32) {
     char[408] data;
 }
 
-extern fn CInt win32_WSAGetLastError() @extern("WSAGetLastError") @if(env::WIN32);
+extern fn CInt win32_WSAStartup() @extern("WSAStartup") @if(env::WIN32 && !$defined(win32_WSAStartup));
+extern fn CInt win32_WSACleanup() @extern("WSACleanup") @if(env::WIN32 && !$defined(win32_WSACleanup));
+extern fn CInt win32_WSAGetLastError() @extern("WSAGetLastError") @if(env::WIN32 && !$defined(win32_WSAGetLastError));
 
 const uint BACKLOG = 10000;
 bool should_close = false;
@@ -39,6 +41,7 @@ fn int process(void* arg) {
 //mem::@report_heap_allocs_in_scope() {
     TcpSocket* socket = arg;
     defer socket.close()!!;
+    defer allocator::destroy_temp_allocators();
 
     HttpRequest req;
     if (catch anyfault err = req.read(socket)) {
@@ -115,8 +118,6 @@ $endif
 
     io::printn("Closing server...");
     server.close()!!;
-
-
 }
 
 fn void init_route_map() => _lowLevel.new_init();
