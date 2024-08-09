@@ -8,6 +8,29 @@ import std::net::tcp;
 
 import std::os::win32;
 
+struct ControllerParadise {
+    bool _ignore;
+}
+
+def Cref = ControllerParadise*;
+
+def @Controller(uri) = { @tag("controller", uri) };
+
+fn void ControllerParadise.init(ControllerParadise* self) {
+    $foreach($method : $typeof(*self).methodsof)
+        $if $typeof(*self).$eval($method).has_tagof("controller"):
+            add_route($typeof(*self).$eval($method).tagof("controller"), &$typeof(*self).$eval($method));
+        $endif
+    $endforeach
+}
+
+//fn HttpResponse ControllerParadise.pong(ControllerParadise* self, HttpRequest req, HashMap(<String,String>) args) @Controller("/ping") {
+//    HttpResponse res;
+//    res.status = HttpStatus.OK;
+//    res.body = string::new_format("Pong!\n", req.method, req.uri);
+//    return res;
+//}
+
 struct WsaData @if(env::WIN32) {
     char[408] data;
 }
@@ -19,24 +42,9 @@ extern fn CInt win32_WSAGetLastError() @extern("WSAGetLastError") @if(env::WIN32
 const uint BACKLOG = 10000;
 bool should_close = false;
 
-fn HttpResponse pong(HttpRequest req, HashMap(<String,String>) args) {
-    HttpResponse res;
-    res.status = HttpStatus.OK;
-    res.body = string::new_format("Pong!\n", req.method, req.uri);
-    return res;
-}
-
-fn HttpResponse pong1(HttpRequest req, HashMap(<String,String>) args) {
-    HttpResponse res;
-    res.status = HttpStatus.OK;
-    res.body = string::new_format(args["pong"]!!, "\n", req.method, req.uri);
-    return res;
-}
-
 import std::collections::map;
 
 fn int process(void* arg) {
-//mem::@report_heap_allocs_in_scope() {
     TcpSocket* socket = arg;
 
     defer {
@@ -56,7 +64,8 @@ fn int process(void* arg) {
     args.new_init();
 
     RouteFunction route = get_route(uri, &args);
-    HttpResponse res = route(req, args);
+
+    HttpResponse res = route(null, req, args);
 
     res.write(socket)!!;
 
@@ -65,7 +74,6 @@ fn int process(void* arg) {
     res.free();
 
     return 0;
-//};
 }
 
 fn void! startServer(String host, uint port) {
@@ -127,13 +135,16 @@ fn void destroy_route_map() => _lowLevel.free();
 
 fn int main(String[] args) {
     // TODO CONFIG
+
     init_route_map();
+    ControllerParadise paradise;
+    paradise.init();
     defer destroy_route_map();
 	String host = "127.0.0.1";
     uint port = 8080;
 
-    add_route("/ping", &pong);
-    add_route("/ping/{pong}", &pong1);
+    //add_route("/ping", &pong);
+    //add_route("/ping/{pong}", &pong1);
 
     startServer(host, port)!!;
     return 0;

@@ -1,7 +1,8 @@
 module c3api;
 import std::collections::map;
 
-def RouteFunction = fn HttpResponse(HttpRequest, HashMap(<String,String>));
+//def RouteFunction = fn HttpResponse(HttpRequest, HashMap(<String,String>));
+def RouteFunction = fn HttpResponse(ControllerParadise*, HttpRequest, HashMap(<String,String>));
 def RouteMap = HashMap(<String, RouteNode*>);
 
 struct RouteNode {
@@ -12,7 +13,7 @@ struct RouteNode {
 
 RouteMap _lowLevel;
 
-fn HttpResponse e404(HttpRequest req, HashMap(<String,String>) args) {
+fn HttpResponse e404(ControllerParadise* controller = null, HttpRequest req, HashMap(<String,String>) args) {
     HttpResponse res;
     res.status = HttpStatus.NOT_FOUND;
     res.body = string::new_format(`{"type":"error","status":404}` "\n", req.method, req.uri);
@@ -24,6 +25,7 @@ fn RouteNode*! get_next_node(RouteNode* from, String to) {
 }
 
 import std::io;
+import std::core::builtin;
 
 fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
     if (uri == "" || uri == "/") {
@@ -43,7 +45,7 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
 
     RouteNode*! temp = _lowLevel[nodes[0]];
     if (catch err = temp) {
-        io::printfn("Catch err: %s", err);
+        if (err != SearchResult.MISSING) io::printfn("Catch err: %s", err);
         return &e404;
     }
 
