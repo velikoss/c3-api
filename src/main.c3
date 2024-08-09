@@ -6,8 +6,6 @@ import std::thread;
 import std::net;
 import std::net::tcp;
 
-// TODO FIX MEMORY LEAK
-
 import std::os::win32;
 
 struct WsaData @if(env::WIN32) {
@@ -40,8 +38,12 @@ import std::collections::map;
 fn int process(void* arg) {
 //mem::@report_heap_allocs_in_scope() {
     TcpSocket* socket = arg;
-    defer socket.close()!!;
-    defer allocator::destroy_temp_allocators();
+
+    defer {
+      socket.close()!!;
+      allocator::free(&allocator::LIBC_ALLOCATOR, arg);
+      allocator::destroy_temp_allocators();
+    }
 
     HttpRequest req;
     if (catch anyfault err = req.read(socket)) {
@@ -111,7 +113,7 @@ $endif
 
         //mem::@report_heap_allocs_in_scope() {
         thread::Thread thread;
-        thread.create(&process, @tclone(socket))!!;
+        thread.create(&process, allocator::clone(&allocator::LIBC_ALLOCATOR, socket))!!;
         thread.detach()!!;
         //};
     }
