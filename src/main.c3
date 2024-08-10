@@ -2,20 +2,17 @@ module c3api;
 
 import c3api::routes;
 import c3api::server;
+import c3api::config;
 
 fn int main(String[] args) {
-    // TODO CONFIG
+    config::Config config = config::readFromFile();
 
     routes::init_route_map();
+    defer routes::destroy_route_map();
 
     ControllerParadise paradise;
     paradise.init();
 
-    defer routes::destroy_route_map();
-
-	String host = "127.0.0.1";
-    uint port = 8080;
-
-    server::startServer(host, port)!!;
+    server::startServer(config.address, config.port)!!;
     return 0;
 }
