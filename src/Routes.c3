@@ -1,4 +1,4 @@
-module c3api;
+module c3api::routes;
 import std::collections::map;
 
 //def RouteFunction = fn HttpResponse(HttpRequest, HashMap(<String,String>));
@@ -101,3 +101,6 @@ fn void add_route(String route, RouteFunction apply) {
 
     temp.apply = apply;
 }
+
+fn void init_route_map() => _lowLevel.new_init();
+fn void destroy_route_map() => _lowLevel.free();
