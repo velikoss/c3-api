@@ -8,6 +8,9 @@ The project is tested and confirmed to be working in Windows, Linux and Mac equa
 
 Inspired from [ArjixWasTaken/c3-simple-http](https://github.com/ArjixWasTaken/c3-simple-http)
 
+## Requirements
+- Latest C3C compiler from [c3lang/c3c](https://github.com/c3lang/c3c/releases/tag/latest)
+
 ## 10.08.2024 Introducing Configuration!
 ### Now you can specify your server address and port using config.json
 Creates automatically at execution folder.
