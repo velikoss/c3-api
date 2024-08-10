@@ -9,6 +9,7 @@ import std::encoding::json;
 struct Config {
     String address;
     uint port;
+    bool cors;
 }
 
 fn Config readFromFile() {
@@ -28,14 +29,15 @@ fn Config readFromFile() {
             file.write(
 `{
     "address": "127.0.0.1",
-    "port": 8080
+    "port": 8080,
+    "enable-cors": false
 }`)!!;
             file.flush()!!;
         }
         File! file = file::open(filename, "r");
         Object*! json = json::parse(&file);
         file.flush()!!;
-        Config config = {.address = json.get_string("address")??"", .port = json.get_int("port")??0};
+        Config config = {.address = json.get_string("address")??"", .port = json.get_int("port")??0, .cors = json.get_bool("enable-cors")??false};
         free(json)!!;
         return config;
     };

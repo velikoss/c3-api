@@ -1,9 +1,21 @@
 module c3api;
 
 import std::collections;
+import std::io;
 
 def StringList = List(<String>);
 def HttpHeaders = HashMap(<String, StringList>);
+
+fn void HttpHeaders.add_header(HttpHeaders* self, String headerName, String headerValue) {
+    if (try entry = self.get_entry(headerName)) {
+        entry.value.push(headerValue);
+    } else {
+        StringList header;
+        header.new_init();
+        header.push(headerValue);
+        self.set(headerName, header);
+    }
+}
 
 fn void! HttpHeaders.from_lines(HttpHeaders* self, List(<String>) lines) {
     @pool() {
@@ -16,14 +28,7 @@ fn void! HttpHeaders.from_lines(HttpHeaders* self, List(<String>) lines) {
             String headerName = line[0..colon].trim();
             String headerValue = line[colon+1..].trim();
 
-            if (try entry = self.get_entry(headerName)) {
-              entry.value.push(headerValue);
-            } else {
-              List(<String>) values;
-              values.temp_init(2);
-              values.push(headerValue);
-              self.set(headerName, values);
-            }
+            self.add_header(headerName, headerValue);
         }
         lines.free();
     };
