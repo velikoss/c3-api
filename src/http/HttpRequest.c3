@@ -47,7 +47,7 @@ fn void! HttpRequest.set_method(HttpRequest* self, String verb) {
 fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
     @pool() {
         List(<char>) bytes;
-        bytes.temp_init(256);
+        bytes.new_init(256);
 
         char[256] buffer;
         while (try usz bytes_read = socket.read(&buffer)) {
@@ -60,7 +60,7 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
         if (bytes.size == 0) return HttpRequestError.NO_DATA?;
 
         List(<char>) header;
-        header.temp_init(256);
+        header.new_init(256);
 
         usz i = 0;
         for (; i < bytes.size; i++) {
@@ -79,7 +79,7 @@ fn void! HttpRequest.read(HttpRequest* self, TcpSocket* socket) {
         char[] body = bytes.entries[i..bytes.size];
 
         StringList header_lines;
-        header_lines.temp_init_with_array(((ZString)header.entries).str_view().tsplit("\r\n"));
+        header_lines.new_init_with_array(((ZString)header.entries).str_view().tsplit("\r\n"));
 
         String[] status_line = header_lines.pop_first()!.tsplit(" ");
         if (status_line.len != 3) return HttpRequestError.MALFORMED_REQUEST?;

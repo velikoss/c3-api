@@ -15,7 +15,7 @@ struct HttpResponse {
 fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
     @pool() {
         DString buffer;
-        buffer.temp_init(64);
+        buffer.new_init(64);
 
         buffer.appendf("HTTP/1.1 %d %s\r\n", self.status.code, self.status.message);
 
@@ -27,7 +27,7 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
             }
 
             StringList content_length;
-            content_length.temp_init(1);
+            content_length.new_init(1);
             content_length.push(string::tformat("%d", self.body.len)); // Leaked Allocation
 
             self.headers.set("Content-Length", content_length);

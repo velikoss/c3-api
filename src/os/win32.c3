@@ -38,9 +38,10 @@ fn void startWSA() {
 fn void stopWSA() {
     $if !env::WIN32:
         return;
+    $else
+        io::printn("WSA cleanup...");
+        win32_WSACleanup();
     $endif
-    io::printn("WSA cleanup...");
-    win32_WSACleanup();
 }
 
 fn void lastWSAErrorOut() {
