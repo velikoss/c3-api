@@ -31,50 +31,53 @@ bool enable_cors = false;
 import std::collections::map;
 
 fn int process(void* arg) {
-    TcpSocket* socket = arg;
-
+    ArenaAllocator arena;
+    arena.init(&&char[256 * 1024]{});
     defer {
-      socket.close()!!;
-      allocator::free(&allocator::LIBC_ALLOCATOR, arg);
-      allocator::destroy_temp_allocators();
+        allocator::free(&allocator::LIBC_ALLOCATOR, arg);
+        allocator::destroy_temp_allocators();
     }
+    mem::@scoped(&arena) {
+        TcpSocket* socket = arg;
 
-    HttpRequest req;
-    if (catch anyfault err = req.read(socket)) {
-        return 1;
-    }
+        defer {
+          socket.close()!!;
+        }
 
-    String uri = req.uri[1:req.uri.len-1];
+        HttpRequest req;
+        if (catch anyfault err = req.read(socket)) {
+            return 1;
+        }
 
-    HashMap(<String,String>) args;
-    args.new_init();
+        String uri = req.uri[1:req.uri.len-1];
 
-    RouteFunction route = routes::get_route(uri, &args);
+        HashMap(<String,String>) args;
+        args.new_init();
 
-    HttpResponse res;
-    res.headers.temp_init();
+        RouteFunction route = routes::get_route(uri, &args);
 
-    if (enable_cors) {
-        if (req.method == HttpVerb.OPTIONS) {
-            res.status = HttpStatus.OK;
-            res.body = "200";
+        HttpResponse res;
+        res.headers.temp_init();
 
-            // TODO REPLACE HEADERS WITH CONFIGURABLE ONE
-            res.headers.add_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // Specify allowed methods
-            res.headers.add_header("Access-Control-Allow-Headers", "Content-Type");
+        if (enable_cors) {
+            if (req.method == HttpVerb.OPTIONS) {
+                res.status = HttpStatus.OK;
+                res.body = "200";
+
+                // TODO REPLACE HEADERS WITH CONFIGURABLE ONE
+                res.headers.add_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // Specify allowed methods
+                res.headers.add_header("Access-Control-Allow-Headers", "Content-Type");
+            } else {
+                res = route(null, req, args);
+            }
+            res.headers.add_header("Access-Control-Allow-Origin", "*");
         } else {
             res = route(null, req, args);
         }
-        res.headers.add_header("Access-Control-Allow-Origin", "*");
-    } else {
-        res = route(null, req, args);
-    }
 
-    res.write(socket)!!;
+        res.write(socket)!!;
+    };
 
-    args.free();
-    req.free();
-    res.free();
     return 0;
 }
 
