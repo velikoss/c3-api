@@ -13,6 +13,6 @@ fn int main(String[] args) {
     ControllerParadise paradise;
     paradise.init();
 
-    server::startServer(config.address, config.port, config.cors)!!;
+    server::startServer(config)!!;
     return 0;
 }

@@ -7,16 +7,29 @@ struct ControllerParadise {
 def Cref = ControllerParadise*;
 
 def @Controller(uri) = { @tag("controller", uri) };
+def @File(uri) = { @tag("file", uri) };
+def @Folder(uri) = { @tag("folder", uri) };
 
 fn void ControllerParadise.init(ControllerParadise* self) {
     $foreach($method : $typeof(*self).methodsof)
         $if $typeof(*self).$eval($method).has_tagof("controller"):
-            routes::add_route($typeof(*self).$eval($method).tagof("controller"), &$typeof(*self).$eval($method));
+            var $tag = $typeof(*self).$eval($method).tagof("controller");
+            routes::add_route($tag, &$typeof(*self).$eval($method));
+            routes::add_tag($tag, "controller", $tag);
+            $if $typeof(*self).$eval($method).has_tagof("file"):
+                var $filetag = $typeof(*self).$eval($method).tagof("file");
+                routes::add_tag($tag, "file", $filetag);
+            $else
+                $if $typeof(*self).$eval($method).has_tagof("folder"):
+                    var $foldertag = $typeof(*self).$eval($method).tagof("folder");
+                    routes::add_tag($tag, "folder", $foldertag);
+                $endif
+            $endif
         $endif
     $endforeach
 }
 
-module c3api::server;
+module c3api::server @private;
 
 import std::io;
 import std::thread;
@@ -26,26 +39,33 @@ import c3api::routes;
 
 const uint BACKLOG = 10000;
 bool should_close = false;
-bool enable_cors = false;
 
+import c3api::utils;
 import std::collections::map;
 
 fn int process(void* arg) {
-    ArenaAllocator arena;
-    arena.init(&&char[256 * 1024]{});
+    OnStackAllocator alloc;
+    alloc.init(&&char[256 * 1024]{}, allocator::heap());
+
     defer {
         allocator::free(&allocator::LIBC_ALLOCATOR, arg);
         allocator::destroy_temp_allocators();
+        alloc.free();
     }
-    mem::@scoped(&arena) {
+
+    mem::@scoped(&alloc) {
         TcpSocket* socket = arg;
 
         defer {
-          socket.close()!!;
+            if (catch anyfault err = socket.close()) {
+                io::printfn("Socket Closing Error: %s", err);
+            }
         }
 
         HttpRequest req;
         if (catch anyfault err = req.read(socket)) {
+            req.free();
+            io::printfn("Request Read Error: %s", err);
             return 1;
         }
 
@@ -54,48 +74,82 @@ fn int process(void* arg) {
         HashMap(<String,String>) args;
         args.new_init();
 
-        RouteFunction route = routes::get_route(uri, &args);
+        RouteFunction route;
+        route = routes::get_route(uri, &args);
+
+        Object* tags = routes::tagsMap[args["reverse_path"]!!]??null;
 
         HttpResponse res;
         res.headers.temp_init();
 
-        if (enable_cors) {
+        defer {
+          args.free();
+          req.free();
+          res.free();
+        }
+
+        if (tags != null) {
+            if ((tags.get_string("file")??"") != "") {
+                args["filename"] = utils::format_path(tags.get_string("file")!!, &args)??tags.get_string("file")!!;
+                route = &routes::file;
+            }
+            else if ((tags.get_string("folder")??"") != "") {
+                args["foldername"] = utils::format_path(tags.get_string("file")!!, &args)??tags.get_string("file")!!;
+                route = &routes::folder;
+            }
+        }
+
+        if (cors_config.get_bool("enabled")??false) {
             if (req.method == HttpVerb.OPTIONS) {
                 res.status = HttpStatus.OK;
-                res.body = "200";
+                res.body = `{"status":200}`;
 
-                // TODO REPLACE HEADERS WITH CONFIGURABLE ONE
-                res.headers.add_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS"); // Specify allowed methods
-                res.headers.add_header("Access-Control-Allow-Headers", "Content-Type");
+                res.headers.add_header("Access-Control-Allow-Methods", cors_config.get_string("Access-Control-Allow-Methods")??"");
+                res.headers.add_header("Access-Control-Allow-Headers", cors_config.get_string("Access-Control-Allow-Headers")??"");
+
+                res.headers.add_header("Content-Type", "application/json");
             } else {
                 res = route(null, req, args);
             }
-            res.headers.add_header("Access-Control-Allow-Origin", "*");
+            res.headers.add_header("Access-Control-Allow-Origin", cors_config.get_string("Access-Control-Allow-Origin")??"");
         } else {
             res = route(null, req, args);
         }
 
-        res.write(socket)!!;
+
+        if (catch err = res.write(socket)) {
+          io::printfn("Failed to write: %s", err);
+        }
     };
 
     return 0;
 }
 
+import std::collections::object;
+Object* cors_config;
+
+import c3api::config;
 import c3api::os::win32;
 
-fn void! startServer(String host, uint port, bool cors) {
-    enable_cors = cors;
+fn void! startServer(config::Config config) @public {
+    cors_config = config.cors;
 
     win32::startWSA();
-    defer win32::stopWSA();
 
-    TcpServerSocket! server = tcp::listen(host, port, BACKLOG, net::SocketOption.REUSEADDR, .ip_protocol=net::IpProtocol.IPV4);
+    TcpServerSocket! server = tcp::listen(config.address, config.port, BACKLOG, net::SocketOption.REUSEADDR, .ip_protocol=net::IpProtocol.IPV4);
+
+    defer {
+        io::printn("Closing server...");
+        server.close()!!;
+        win32::stopWSA();
+        free(cors_config);
+    }
 
     if (catch err = server) {
-        io::printfn("failed to bind <%s:%d> with failure: %s", host, port, err);
+        io::printfn("failed to bind <%s:%d> with failure: %s", config.address, config.port, err);
         return;
     }
-    io::printfn("listening on <%s:%d>", host, port);
+    io::printfn("listening on <%s:%d>", config.address, config.port);
 
     while (!should_close) {
         TcpSocket! socket = tcp::accept(&server);
@@ -110,7 +164,4 @@ fn void! startServer(String host, uint port, bool cors) {
         thread.create(&process, allocator::clone(&allocator::LIBC_ALLOCATOR, socket))!!;
         thread.detach()!!;
     }
-
-    io::printn("Closing server...");
-    server.close()!!;
 }

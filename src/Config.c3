@@ -10,7 +10,7 @@ import std::encoding::json;
 struct Config {
     String address;
     uint port;
-    bool cors;
+    Object* cors;
 }
 
 fn Config readFromFile() {
@@ -19,7 +19,7 @@ fn Config readFromFile() {
         path = path.append("config.json")!!;
 
         if (!path::is_file(path)) {
-            io::printn("No file(");
+            io::printn("Creating config file...");
             File! file = file::open_path(path, "w");
             if (catch anyfault err = file) {
                 io::printn(err);
@@ -29,7 +29,12 @@ fn Config readFromFile() {
 `{
     "address": "127.0.0.1",
     "port": 8080,
-    "enable-cors": false
+    "cors": {
+        "enabled": false,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Origin": "*"
+    }
 }`)!!;
             file.flush()!!;
             file.close()!!;
@@ -40,7 +45,7 @@ fn Config readFromFile() {
         file.flush()!!;
         file.close()!!;
 
-        Config config = {.address = json.get_string("address")??"", .port = json.get_int("port")??0, .cors = json.get_bool("enable-cors")??false};
+        Config config = {.address = json.get_string("address")??"", .port = json.get_int("port")??0, .cors = json.get_or_create_obj("cors")??null};
 
         free(json)!!;
         return config;
