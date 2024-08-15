@@ -40,12 +40,19 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
         path = path.append(filename)!!;
 
         file = file::open_path(path, "rb");
+        filename = path.str_view();
     }
 
     if (catch anyfault err = file) {
         res.status = HttpStatus.NOT_FOUND;
         io::printn(err);
         res.body = string::new_format(`{"type":"error","status":404}`, "\n", req.method, req.uri);
+
+        res.headers.add_header("Content-Type", "application/json");
+    } else if (file::get_size(filename)!! > 5 * 1024 * 1024) { // TODO CONFIG (right now 5Mb is the limit for the file)
+        res.status = HttpStatus.PAYLOAD_TOO_LARGE;
+
+        res.body = string::new_format(`{"type":"error","status":413}`, "\n", req.method, req.uri);
 
         res.headers.add_header("Content-Type", "application/json");
     } else {

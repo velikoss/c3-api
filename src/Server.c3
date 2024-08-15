@@ -94,7 +94,7 @@ fn int process(void* arg) {
                 route = &routes::file;
             }
             else if ((tags.get_string("folder")??"") != "") {
-                args["foldername"] = utils::format_path(tags.get_string("file")!!, &args)??tags.get_string("file")!!;
+                args["foldername"] = utils::format_path(tags.get_string("foldername")!!, &args)??tags.get_string("foldername")!!;
                 route = &routes::folder;
             }
         }
