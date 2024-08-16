@@ -1,0 +1,131 @@
+name: Zip and Release
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Move files from subdirectories to src
+        run: |
+          find src -type f -mindepth 2 -exec mv {} src/ \;
+
+      - name: Remove empty subdirectories in src
+        run: find src -type d -empty -delete
+
+      - name: Create manifest.json file
+        run: |
+          cat <<EOT >> src/manifest.json
+          {
+            "provides" : "c3api",
+            "targets" : {
+              "freebsd-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "linux-aarch64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "linux-riscv32" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "linux-riscv64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "linux-x86" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "linux-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "macos-aarch64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "macos-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "netbsd-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "openbsd-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "wasm32" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "wasm64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "windows-aarch64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              },
+              "windows-x64" : {
+                "link-args" : [],
+                "dependencies" : [],
+                "linked-libraries" : []
+              }
+            }
+          }
+          EOT
+
+      - name: Zip the src folder including manifest.json
+        run: zip -r c3api.c3l src/*
+
+      - name: Read Release Notes
+        id: get_release_notes
+        run: |
+          release_notes=$(cat release_notes.md)
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo "$release_notes" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: ${{ env.RELEASE_NOTES }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: c3api.c3l
+          asset_name: c3api.c3l
+          asset_content_type: application/zip
