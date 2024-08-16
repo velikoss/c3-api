@@ -54,6 +54,6 @@ fn void! HttpResponse.write(HttpResponse* self, TcpSocket* socket) {
 
 fn void HttpResponse.free(HttpResponse* self) {
     self.headers.free();
-    free(self.body);
+    //free(self.body);
     //free(self);
 }

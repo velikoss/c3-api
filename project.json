@@ -25,7 +25,7 @@
   "targets": {
     "c3api": {
       // Executable or library.
-      "type": "executable",
+      "type": "static-lib",
       // Additional libraries, sources
       // and overrides of global settings here.
     },
