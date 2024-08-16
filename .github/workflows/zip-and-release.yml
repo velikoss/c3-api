@@ -21,9 +21,14 @@ jobs:
           find src -type f -mindepth 2 -exec mv {} src/ \;
           find src -type d -empty -delete
 
+      - name: Determine Build Number
+        id: determine_build
+        run: echo "BUILD_NUMBER=${{ github.run_number }}" >> $GITHUB_ENV
+
       - name: Create manifest.json file
         run: |
           cat <<EOT > src/manifest.json
+          // C3API BUILD: ${{ env.BUILD_NUMBER }}
           {
             "provides" : "c3api",
             "targets" : {
