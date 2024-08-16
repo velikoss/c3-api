@@ -48,6 +48,20 @@ fn HttpResponse c3api::ControllerParadise.srcfile(c3api::Cref self = null, HttpR
 ```
 _P.S. Function body with this annotations will NOT execute_
 
+## Changes inside config.json
+```json
+{
+    "address": "127.0.0.1",
+    "port": 8080,
+    "cors": {
+        "enabled": false,
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Origin": "*"
+    }
+}
+```
+
 ## 12.08.2024 Introducing CORS!
 ### Now server automatically serves CORS requests.
 To enable that delete your old config to update it.
