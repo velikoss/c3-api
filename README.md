@@ -137,11 +137,11 @@ fn HttpResponse c3api::ControllerParadise.greetings(c3api::Cref self = null, Htt
 
 ## Plans
 
-- [ ] CORS Module
+- [x] CORS Module
 - [ ] Custom modules support
 - [x] Config File
 - [ ] Logging system
-- [ ] Embedding **c3-api** into other modules
+- [x] Embedding **c3-api** into other modules
 
 ## Installation
 
