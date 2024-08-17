@@ -99,7 +99,7 @@ fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, H
 
         res.headers.add_header("Content-Type", "application/json");
     } else {
-        DString body;
+        DString body = dstring::new();
         body.appendfn(`
 <style>
 table, th, td {
@@ -190,7 +190,7 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
 }
 
 fn void add_route(String route, RouteFunction apply) {
-    if (route[0] == '/' && route.len > 1) route = route[1:route.len-1];
+    if (route[0] == '/' && route.len > 1) route = route[1..];
 
     if (
             !(@ok(route.index_of_char('{')) && @ok(route.index_of_char('}'))) // Dynamic URI check

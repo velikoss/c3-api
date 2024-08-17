@@ -1,3 +1,6 @@
+## 17.08.2024
+- Fixed `@File` and `@Folder` crashes on Linux
+
 ## 16.08.2024 Introducing Files and Folder Views!</br>(+ c3-api is officially a library now!)
 ### Now to add c3-api to your project you should do this:
 - Download latest <b>c3api.c3l</b> from [Releases](https://github.com/velikoss/c3-api/releases)
@@ -14,7 +17,7 @@
 - For example project using library look [here](https://github.com/velikoss/c3-api-example)
 
 ## Added Files and Folder Views
-- Now you can link to file using @File("path") and view folder contents using @Folder("path")
+- Now you can link to file using `@File("path")` and view folder contents using `@Folder("path")`
 - It also supports dynamic arguments
 - For example look [here](https://github.com/velikoss/c3-api-example/blob/main/src/examples/folder.c3)
 ### c3-api-example/src/examples/folder.c3
