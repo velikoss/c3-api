@@ -1,5 +1,6 @@
 ## 17.08.2024
 - Fixed `@File` and `@Folder` crashes on Linux
+- Minor fixes
 
 ## 16.08.2024 Introducing Files and Folder Views!</br>(+ c3-api is officially a library now!)
 ### Now to add c3-api to your project you should do this:

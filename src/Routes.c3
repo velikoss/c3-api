@@ -153,7 +153,7 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
     }
 
     if (
-        !(@ok(uri.index_of_char('{')) && @ok(uri.index_of_char('}'))) // Dynamic URI check
+        !(uri.contains("{") && uri.contains("}")) // Dynamic URI check
         && _lowLevel.has_key(uri)
     ) {
         return (_lowLevel[uri].has_apply??false)?_lowLevel[uri].apply!!:&e404;
@@ -189,17 +189,17 @@ fn RouteFunction get_route(String uri, HashMap(<String,String>)* args) {
     return res;
 }
 
-fn void add_route(String route, RouteFunction apply) {
-    if (route[0] == '/' && route.len > 1) route = route[1..];
+fn void add_route(String uri, RouteFunction apply) {
+    if (uri[0] == '/' && uri.len > 1) uri = uri[1..];
 
     if (
-            !(@ok(route.index_of_char('{')) && @ok(route.index_of_char('}'))) // Dynamic URI check
+            !(uri.contains("{") && uri.contains("}")) // Dynamic URI check
     ) {
-        _lowLevel[route] = new_route(.name = route, .apply = apply);
+        _lowLevel[uri] = new_route(.name = uri, .apply = apply);
         return;
     }
 
-    String[] nodes = route.split("/");
+    String[] nodes = uri.split("/");
     RouteNode* temp;
 
     if (!_lowLevel.has_key(nodes[0])) {
