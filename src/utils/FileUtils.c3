@@ -5,7 +5,7 @@ import std::collections::map;
 fn String! format_path(String format, HashMap(<String, String>)* args) {
     @pool() {
         foreach (String key: args.key_tlist()) {
-            DString _placeholder;
+            DString _placeholder = dstring::new();
             _placeholder.appendf("{%s}", key);
             String placeholder = _placeholder.str_view();
             _placeholder.free();
