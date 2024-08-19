@@ -41,11 +41,14 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
 
         file = file::open_path(path, "rb");
         filename = path.str_view();
+<<<<<<< HEAD
     }
 
     defer {
       (void)file.flush();
       (void)file.close();
+=======
+>>>>>>> 17f84fe7230eb710f4f3d280f7187be2590553b1
     }
 
     if (catch anyfault err = file) {
