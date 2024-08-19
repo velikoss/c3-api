@@ -40,28 +40,38 @@ fn HttpResponse file(ControllerParadise* controller = null, HttpRequest req, Has
         path = path.append(filename)!!;
 
         file = file::open_path(path, "rb");
+        filename = path.str_view();
+    }
+
+    defer {
+      (void)file.flush();
+      (void)file.close();
     }
 
     if (catch anyfault err = file) {
         res.status = HttpStatus.NOT_FOUND;
-        io::printn(err);
+        io::eprintfn("Failed to get file: %s", err);
         res.body = string::new_format(`{"type":"error","status":404}`, "\n", req.method, req.uri);
 
         res.headers.add_header("Content-Type", "application/json");
+    } else if (file::get_size(filename)!! > 5 * 1024 * 1024) { // TODO CONFIG (right now 5Mb is the limit for the file)
+        res.status = HttpStatus.PAYLOAD_TOO_LARGE;
+
+        res.body = string::new_format(`{"type":"error","status":413}`, "\n", req.method, req.uri);
+
+        res.headers.add_header("Content-Type", "application/json");
     } else {
-        res.status = HttpStatus.OK;
-
         DString text;
-        text.read_from_stream(&file)!!;
-
-        res.body = text.str_view();
-        res.headers.add_header("Content-Type", "text/plain");
-
-        text.free();
+        if (catch anyfault err1 = text.read_from_stream(&file)) {
+            io::eprintfn("Failed to read: %s", err1);
+            res.status = HttpStatus.BAD_REQUEST;
+            res.body = string::new_format(`{"type":"error","status":400}`, "\n", req.method, req.uri);
+        } else {
+            res.status = HttpStatus.OK;
+            res.body = text.str_view();
+            res.headers.add_header("Content-Type", "text/plain");
+        }
     }
-
-    file.flush()!!;
-    file.close()!!;
 
     return res;
 }
@@ -77,7 +87,7 @@ fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, H
     } else {
         Path path = path::tgetcwd()!!;
         path = path.append(filename)!!;
-
+        filename = path.str_view();
         if (path::is_dir(path)) {
             list = path::ls(path);
         }
@@ -90,11 +100,34 @@ fn HttpResponse folder(ControllerParadise* controller = null, HttpRequest req, H
         res.headers.add_header("Content-Type", "application/json");
     } else {
         DString body;
+        body.appendfn(`
+<style>
+table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  table-layout: auto;
+  vertical-align: bottom;
+  padding: 5px;
+}
+</style>
+<h1>Contents of %s</h1><hr>
+<table>
+<tr>
+    <th>Name</th>
+    <th>Size</th>
+</tr>
+        `, filename);
 
         foreach (Path file: list) {
-            body.append(path::is_dir(file) ? "📁 " : "🔗 ");
-            body.appendfn("%s<br/>", file.to_new_string());
+            body.appendfn(
+`<tr>
+    <td>%s %s</td>
+    <td>%d</td>
+</tr>`
+            , (path::is_dir(file) ? "📁 " : "🔗 "), file.str_view(), file::get_size(file.str_view())!!);
         }
+
+        body.append("</table>");
 
         res.status = HttpStatus.OK;
 
